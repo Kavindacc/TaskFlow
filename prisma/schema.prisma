@@ -1,0 +1,84 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  boards    Board[]  @relation("BoardOwner")
+  memberIn  BoardMember[]
+  comments  Comment[]  // ← Add this line
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Board {
+  id          String        @id @default(cuid())
+  title       String
+  ownerId     String
+  owner       User          @relation("BoardOwner", fields: [ownerId], references: [clerkId])
+  members     BoardMember[]
+  lists       List[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model BoardMember {
+  id      String @id @default(cuid())
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [clerkId])
+  role    String @default("member")
+
+  @@unique([boardId, userId])
+}
+
+model List {
+  id        String   @id @default(cuid())
+  title     String
+  order     Int
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards     Card[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([boardId, order])
+}
+
+model Card {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  listId      String
+  list        List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  labels      String[]
+  dueDate     DateTime?
+  comments    Comment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([listId, order])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [clerkId])
+  createdAt DateTime @default(now())
+}
