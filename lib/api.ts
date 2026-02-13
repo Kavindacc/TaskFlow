@@ -54,25 +54,30 @@ export const api = {
       }),
   },
 
-  // Board endpoints (to be implemented later)
+  // Board endpoints
   boards: {
     getAll: (token: string) =>
       fetchAPI('/api/boards', {
         headers: { Authorization: `Bearer ${token}` },
       }),
 
-    create: (token: string, name: string, description?: string) =>
+    getById: (token: string, id: string) =>
+      fetchAPI(`/api/boards/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+
+    create: (token: string, title: string) =>
       fetchAPI('/api/boards', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ title }),
       }),
 
-    update: (token: string, id: string, data: { name?: string; description?: string }) =>
+    update: (token: string, id: string, title: string) =>
       fetchAPI(`/api/boards/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ title }),
       }),
 
     delete: (token: string, id: string) =>

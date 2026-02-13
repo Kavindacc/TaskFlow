@@ -28,7 +28,7 @@ export default function SignInPage() {
       
       // Delay redirect to show success message
       setTimeout(() => {
-        router.push('/boards');
+        router.push('/dashboard');
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
