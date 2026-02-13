@@ -86,4 +86,74 @@ export const api = {
         headers: { Authorization: `Bearer ${token}` },
       }),
   },
+
+  // List endpoints
+  lists: {
+    create: (token: string, boardId: string, title: string) =>
+      fetchAPI(`/api/boards/${boardId}/lists`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title }),
+      }),
+
+    update: (token: string, id: string, title: string) =>
+      fetchAPI(`/api/lists/${id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title }),
+      }),
+
+    delete: (token: string, id: string) =>
+      fetchAPI(`/api/lists/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+
+    reorder: (token: string, lists: { id: string; order: number }[]) =>
+      fetchAPI('/api/lists/reorder', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lists }),
+      }),
+  },
+
+  // Card endpoints
+  cards: {
+    create: (token: string, listId: string, title: string) =>
+      fetchAPI(`/api/lists/${listId}/cards`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title }),
+      }),
+
+    get: (token: string, id: string) =>
+      fetchAPI(`/api/cards/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+
+    update: (token: string, id: string, data: {
+      title?: string;
+      description?: string;
+      labels?: string[];
+      dueDate?: string | null;
+    }) =>
+      fetchAPI(`/api/cards/${id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }),
+
+    delete: (token: string, id: string) =>
+      fetchAPI(`/api/cards/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+
+    move: (token: string, id: string, listId: string, order: number) =>
+      fetchAPI(`/api/cards/${id}/move`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ listId, order }),
+      }),
+  },
 };
