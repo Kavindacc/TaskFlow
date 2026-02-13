@@ -1,9 +1,10 @@
-import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
-import { auth } from '@clerk/nextjs/server';
+'use client';
 
-export default async function HomePage() {
-  const { userId } = await auth();
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function HomePage() {
+  const { user, logout, loading } = useAuth();
 
   return (
     <div className="min-h-screen bg-white">
@@ -22,12 +23,22 @@ export default async function HomePage() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              {userId ? (
+              {loading ? (
+                <div className="text-gray-500">Loading...</div>
+              ) : user ? (
                 <>
                   <Link href="/boards" className="text-gray-700 hover:text-blue-600 font-medium transition">
                     Dashboard
                   </Link>
-                  <UserButton afterSignOutUrl="/" />
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-600">{user.name || user.email}</span>
+                    <button
+                      onClick={logout}
+                      className="text-gray-700 hover:text-red-600 font-medium transition"
+                    >
+                      Logout
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
