@@ -85,6 +85,19 @@ export const api = {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       }),
+
+    inviteMember: (token: string, boardId: string, email: string) =>
+      fetchAPI(`/api/boards/${boardId}/members`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email }),
+      }),
+
+    removeMember: (token: string, boardId: string, userId: string) =>
+      fetchAPI(`/api/boards/${boardId}/members/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
   },
 
   // List endpoints

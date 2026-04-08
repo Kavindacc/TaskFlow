@@ -5,14 +5,15 @@ import { useRouter, useParams } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { Board, List, Card } from '@/types/board';
+import { Board, List, Card, BoardMember } from '@/types/board';
 import KanbanList from '@/components/kanban/KanbanList';
 import AddListButton from '@/components/kanban/AddListButton';
 import CreateCardModal from '@/components/kanban/CreateCardModal';
 import CardDetailModal from '@/components/kanban/CardDetailModal';
+import ManageMembersModal from '@/components/dashboard/ManageMembersModal';
 
 export default function BoardPage() {
-  const { token, isAuthenticated, loading: authLoading } = useAuth();
+  const { token, isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const boardId = params.id as string;
@@ -23,6 +24,9 @@ export default function BoardPage() {
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [selectedListTitle, setSelectedListTitle] = useState<string>('');
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+
+  const isOwner = board?.ownerId === user?.id;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -182,6 +186,25 @@ export default function BoardPage() {
     }
   };
 
+  const handleInviteMember = async (email: string) => {
+    if (!token || !board) return;
+    const response = await api.boards.inviteMember(token, board.id, email);
+    // Optimistically add the new member to board state
+    setBoard({
+      ...board,
+      members: [...board.members, response.member],
+    });
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!token || !board) return;
+    await api.boards.removeMember(token, board.id, userId);
+    setBoard({
+      ...board,
+      members: board.members.filter((m) => m.user.id !== userId),
+    });
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     const { destination, source, type } = result;
 
@@ -316,21 +339,43 @@ export default function BoardPage() {
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Back to dashboard"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">{board.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 flex-1">{board.title}</h1>
+
+            {/* Member avatars */}
+            <div className="flex items-center">
+              <div className="flex -space-x-2 mr-3">
+                {board.members.slice(0, 4).map((member) => (
+                  <div
+                    key={member.id}
+                    title={member.user.name || member.user.email}
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold"
+                  >
+                    {member.user.name ? member.user.name[0].toUpperCase() : member.user.email[0].toUpperCase()}
+                  </div>
+                ))}
+                {board.members.length > 4 && (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-gray-600 text-xs font-bold">
+                    +{board.members.length - 4}
+                  </div>
+                )}
+              </div>
+
+              {/* Members button */}
+              <button
+                onClick={() => setShowMembersModal(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                {isOwner ? 'Manage Members' : 'Members'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -405,6 +450,18 @@ export default function BoardPage() {
         onUpdate={handleUpdateCard}
         onDelete={handleDeleteCard}
       />
+
+      {/* Manage Members Modal */}
+      {board && (
+        <ManageMembersModal
+          board={board}
+          isOpen={showMembersModal}
+          isOwner={isOwner}
+          onClose={() => setShowMembersModal(false)}
+          onInvite={handleInviteMember}
+          onRemove={handleRemoveMember}
+        />
+      )}
     </div>
   );
 }
