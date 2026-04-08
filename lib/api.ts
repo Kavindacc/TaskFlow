@@ -156,4 +156,20 @@ export const api = {
         body: JSON.stringify({ listId, order }),
       }),
   },
+
+  // Comment endpoints
+  comments: {
+    create: (token: string, cardId: string, text: string) =>
+      fetchAPI(`/api/cards/${cardId}/comments`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ text }),
+      }),
+
+    delete: (token: string, commentId: string) =>
+      fetchAPI(`/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+  },
 };

@@ -34,6 +34,17 @@ export interface List {
   cards: Card[];
 }
 
+export interface Comment {
+  id: string;
+  text: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -42,6 +53,7 @@ export interface Card {
   listId: string;
   labels: string[];
   dueDate: string | null;
+  comments?: Comment[];
 }
 
 // API Response types
