@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { List, Card } from '@/types/board';
-import { Droppable } from '@hello-pangea/dnd';
+import { Droppable, DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import KanbanCard from './KanbanCard';
 
 interface KanbanListProps {
   list: List;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
   onAddCard: (listId: string) => void;
   onCardClick: (card: Card) => void;
   onDeleteList: (listId: string) => void;
@@ -15,6 +16,7 @@ interface KanbanListProps {
 
 export default function KanbanList({
   list,
+  dragHandleProps,
   onAddCard,
   onCardClick,
   onDeleteList,
@@ -44,7 +46,22 @@ export default function KanbanList({
   return (
     <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg p-4">
       {/* List Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 group">
+        {/* Drag handle — grip icon */}
+        <div
+          {...dragHandleProps}
+          className="flex-shrink-0 p-1 mr-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing rounded transition-colors"
+          title="Drag to reorder list"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="9" cy="6" r="1.5" />
+            <circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" />
+            <circle cx="15" cy="18" r="1.5" />
+          </svg>
+        </div>
         {isEditingTitle ? (
           <input
             type="text"

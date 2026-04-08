@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Board, List, Card } from '@/types/board';
 import KanbanList from '@/components/kanban/KanbanList';
 import AddListButton from '@/components/kanban/AddListButton';
 import CreateCardModal from '@/components/kanban/CreateCardModal';
+import CardDetailModal from '@/components/kanban/CardDetailModal';
 
 export default function BoardPage() {
   const { token, isAuthenticated, loading: authLoading } = useAuth();
@@ -21,6 +22,7 @@ export default function BoardPage() {
   const [showCreateCardModal, setShowCreateCardModal] = useState(false);
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [selectedListTitle, setSelectedListTitle] = useState<string>('');
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -131,14 +133,59 @@ export default function BoardPage() {
   };
 
   const handleCardClick = (card: Card) => {
-    // TODO: Open card details modal
-    console.log('Card clicked:', card);
+    setSelectedCard(card);
+  };
+
+  const handleUpdateCard = async (cardId: string, data: Partial<Card>) => {
+    if (!token || !board) return;
+
+    try {
+      const response = await api.cards.update(token, cardId, {
+        title: data.title,
+        description: data.description ?? undefined,
+        labels: data.labels,
+        dueDate: data.dueDate ?? null,
+      });
+      // Update board state with the updated card
+      setBoard({
+        ...board,
+        lists: board.lists?.map((list) => ({
+          ...list,
+          cards: list.cards.map((c) =>
+            c.id === cardId ? { ...c, ...response.card } : c
+          ),
+        })),
+      });
+      showToast('Card updated successfully!', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to update card', 'error');
+      throw error;
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!token || !board) return;
+
+    try {
+      await api.cards.delete(token, cardId);
+      setBoard({
+        ...board,
+        lists: board.lists?.map((list) => ({
+          ...list,
+          cards: list.cards.filter((c) => c.id !== cardId),
+        })),
+      });
+      showToast('Card deleted successfully!', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to delete card', 'error');
+      throw error;
+    }
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId, type } = result;
+    const { destination, source, type } = result;
 
-    // Dropped outside the list
+    // Dropped outside any droppable
     if (!destination) return;
 
     // Dropped in the same position
@@ -149,8 +196,43 @@ export default function BoardPage() {
       return;
     }
 
-    if (type === 'card') {
+    if (type === 'list') {
+      await handleListDrag(result);
+    } else if (type === 'card') {
       await handleCardDrag(result);
+    }
+  };
+
+  const handleListDrag = async (result: DropResult) => {
+    if (!token || !board) return;
+
+    const { destination, source } = result;
+    if (!destination) return;
+
+    // Reorder lists array optimistically
+    const newLists = Array.from(board.lists || []);
+    const [movedList] = newLists.splice(source.index, 1);
+    newLists.splice(destination.index, 0, movedList);
+
+    // Assign new order values
+    const reorderedLists = newLists.map((list, index) => ({
+      ...list,
+      order: index,
+    }));
+
+    // Optimistic UI update
+    setBoard({ ...board, lists: reorderedLists });
+
+    // Persist to backend
+    try {
+      await api.lists.reorder(
+        token,
+        reorderedLists.map(({ id, order }) => ({ id, order }))
+      );
+    } catch (error) {
+      // Revert on failure
+      fetchBoard();
+      showToast('Failed to reorder lists', 'error');
     }
   };
 
@@ -265,15 +347,27 @@ export default function BoardPage() {
               >
                 {/* Lists */}
                 {board.lists && board.lists.length > 0 ? (
-                  board.lists.map((list) => (
-                    <KanbanList
-                      key={list.id}
-                      list={list}
-                      onAddCard={handleAddCard}
-                      onCardClick={handleCardClick}
-                      onDeleteList={handleDeleteList}
-                      onUpdateListTitle={handleUpdateListTitle}
-                    />
+                  board.lists.map((list, index) => (
+                    <Draggable key={list.id} draggableId={list.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`transition-transform ${
+                            snapshot.isDragging ? 'rotate-1 scale-105' : ''
+                          }`}
+                        >
+                          <KanbanList
+                            list={list}
+                            dragHandleProps={provided.dragHandleProps}
+                            onAddCard={handleAddCard}
+                            onCardClick={handleCardClick}
+                            onDeleteList={handleDeleteList}
+                            onUpdateListTitle={handleUpdateListTitle}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
                   ))
                 ) : (
                   <div className="flex-shrink-0 w-80 bg-white/50 rounded-lg p-8 text-center">
@@ -301,6 +395,15 @@ export default function BoardPage() {
         listTitle={selectedListTitle}
         onClose={() => setShowCreateCardModal(false)}
         onCreate={handleCreateCard}
+      />
+
+      {/* Card Detail Modal */}
+      <CardDetailModal
+        card={selectedCard}
+        isOpen={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+        onUpdate={handleUpdateCard}
+        onDelete={handleDeleteCard}
       />
     </div>
   );
