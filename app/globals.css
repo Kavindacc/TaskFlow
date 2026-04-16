@@ -1,41 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Tonal Architecture ─────────────────────────── */
+  --surface:              #f8f9ff;
+  --surface-dim:          #dde3f0;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low:    #eff4ff;
+  --surface-container:        #e5eeff;
+  --surface-container-high:   #d9e2f8;
+  --surface-container-highest:#cdd6f0;
+
+  /* ── Primary Palette ────────────────────────────── */
+  --primary:              #0036ad;
+  --primary-container:    #1b4dd7;
+  --on-primary:           #ffffff;
+  --primary-glow:         rgba(0, 54, 173, 0.18);
+
+  /* ── Text Roles ─────────────────────────────────── */
+  --on-surface:           #0b1c30;
+  --on-surface-variant:   #3a4a5c;
+  --secondary:            #515f74;
+  --outline-variant:      rgba(195, 198, 214, 0.15);
+
+  /* ── Semantic ───────────────────────────────────── */
+  --error:                #ba1a1a;
+  --error-container:      #ffdad6;
+  --success:              #2d6a4f;
+
+  /* ── Shadows ────────────────────────────────────── */
+  --shadow-ambient:       0 8px 32px rgba(11, 28, 48, 0.06);
+  --shadow-float:         0 16px 48px rgba(11, 28, 48, 0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ── Animations ─────────────────────────────────────── */
 @keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fade-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.4; }
+  100% { transform: scale(1.5); opacity: 0;   }
+}
+@keyframes count-up {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1);   }
+}
+@keyframes grid-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out;
+.animate-slide-in  { animation: slide-in 0.3s ease-out; }
+.animate-fade-up   { animation: fade-up  0.6s ease-out both; }
+.animate-float     { animation: float    4s ease-in-out infinite; }
+.animate-count-up  { animation: count-up 0.8s ease-out both; }
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+
+/* ── Design System Utilities ────────────────────────── */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+}
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, #4f7ef7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.glass {
+  background: rgba(248, 249, 255, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.card-surface {
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-ambient);
+}
+.shimmer-text {
+  background: linear-gradient(90deg, var(--primary) 0%, #4f7ef7 40%, var(--primary) 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
 }
