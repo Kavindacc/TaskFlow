@@ -11,6 +11,7 @@ import AddListButton from '@/components/kanban/AddListButton';
 import CreateCardModal from '@/components/kanban/CreateCardModal';
 import CardDetailModal from '@/components/kanban/CardDetailModal';
 import ManageMembersModal from '@/components/dashboard/ManageMembersModal';
+import { useBoardSocket } from '@/hooks/useBoardSocket';
 
 export default function BoardPage() {
   const { token, isAuthenticated, loading: authLoading, user } = useAuth();
@@ -27,6 +28,9 @@ export default function BoardPage() {
   const [showMembersModal, setShowMembersModal] = useState(false);
 
   const isOwner = board?.ownerId === user?.id;
+
+  // 🔴 Real-time sync via Socket.io
+  useBoardSocket({ boardId, board, setBoard, selectedCard, setSelectedCard });
 
   // Redirect if not authenticated
   useEffect(() => {
