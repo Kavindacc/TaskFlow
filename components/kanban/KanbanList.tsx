@@ -14,6 +14,16 @@ interface KanbanListProps {
   onUpdateListTitle: (listId: string, title: string) => void;
 }
 
+// Column accent color based on title keywords
+function getColumnAccent(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes('done') || t.includes('complete') || t.includes('success')) return '#2d6a4f';
+  if (t.includes('progress') || t.includes('doing') || t.includes('review')) return '#0036ad';
+  if (t.includes('backlog')) return '#515f74';
+  if (t.includes('urgent') || t.includes('block')) return '#ba1a1a';
+  return '#7c3aed';
+}
+
 export default function KanbanList({
   list,
   dragHandleProps,
@@ -24,6 +34,9 @@ export default function KanbanList({
 }: KanbanListProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [title, setTitle] = useState(list.title);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const accent = getColumnAccent(list.title);
 
   const handleTitleSubmit = () => {
     if (title.trim() && title !== list.title) {
@@ -34,87 +47,155 @@ export default function KanbanList({
     setIsEditingTitle(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleTitleSubmit();
-    } else if (e.key === 'Escape') {
-      setTitle(list.title);
-      setIsEditingTitle(false);
-    }
-  };
-
   return (
-    <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg p-4">
-      {/* List Header */}
-      <div className="flex items-center justify-between mb-3 group">
-        {/* Drag handle — grip icon */}
-        <div
-          {...dragHandleProps}
-          className="flex-shrink-0 p-1 mr-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing rounded transition-colors"
-          title="Drag to reorder list"
-        >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="9" cy="6" r="1.5" />
-            <circle cx="15" cy="6" r="1.5" />
-            <circle cx="9" cy="12" r="1.5" />
-            <circle cx="15" cy="12" r="1.5" />
-            <circle cx="9" cy="18" r="1.5" />
-            <circle cx="15" cy="18" r="1.5" />
-          </svg>
-        </div>
-        {isEditingTitle ? (
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleSubmit}
-            onKeyDown={handleKeyDown}
-            className="flex-1 px-2 py-1 text-sm font-semibold bg-white border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoFocus
-          />
-        ) : (
-          <h3
-            onClick={() => setIsEditingTitle(true)}
-            className="flex-1 text-sm font-semibold text-gray-900 cursor-pointer hover:bg-gray-200 px-2 py-1 rounded"
-          >
-            {list.title}
-            <span className="ml-2 text-gray-500 font-normal">
-              {list.cards.length}
-            </span>
-          </h3>
-        )}
+    <div style={{
+      flexShrink: 0,
+      width: '288px',
+      background: 'var(--surface-container-low)',
+      borderRadius: '1rem',
+      display: 'flex',
+      flexDirection: 'column',
+      maxHeight: 'calc(100vh - 180px)',
+    }}>
+      {/* ── Column Header ── */}
+      <div
+        {...dragHandleProps}
+        style={{
+          padding: '1rem 1rem 0.75rem',
+          cursor: dragHandleProps ? 'grab' : 'default',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+            {/* Accent dot */}
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: accent, flexShrink: 0 }} />
 
-        {/* Delete List Button */}
-        <button
-          onClick={() => onDeleteList(list.id)}
-          className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-          aria-label="Delete list"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
+            {/* Editable title */}
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleTitleSubmit();
+                  if (e.key === 'Escape') { setTitle(list.title); setIsEditingTitle(false); }
+                }}
+                autoFocus
+                style={{
+                  flex: 1, fontSize: '0.75rem', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'var(--on-surface)', background: '#fff',
+                  border: 'none', outline: 'none', borderRadius: '0.375rem',
+                  padding: '0.25rem 0.5rem',
+                  boxShadow: '0 0 0 2px rgba(0,54,173,0.2)',
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              />
+            ) : (
+              <h3
+                onClick={() => setIsEditingTitle(true)}
+                style={{
+                  fontSize: '0.75rem', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'var(--on-surface-variant)',
+                  cursor: 'pointer', flex: 1,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}
+              >
+                {list.title}
+              </h3>
+            )}
+
+            {/* Card count badge */}
+            <span style={{
+              fontSize: '0.6875rem', fontWeight: 700,
+              padding: '0.125rem 0.5rem', borderRadius: '9999px',
+              background: '#fff', color: 'var(--secondary)',
+              flexShrink: 0,
+            }}>{list.cards.length}</span>
+          </div>
+
+          {/* Kebab menu */}
+          <div style={{ position: 'relative', marginLeft: '0.5rem' }}>
+            <button
+              onClick={() => setShowMenu(v => !v)}
+              style={{
+                width: '1.75rem', height: '1.75rem', borderRadius: '0.375rem',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--secondary)', transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-container)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+              </svg>
+            </button>
+            {showMenu && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowMenu(false)} />
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, zIndex: 20,
+                  background: '#fff', borderRadius: '0.75rem',
+                  boxShadow: '0 8px 32px rgba(11,28,48,0.12)',
+                  minWidth: '140px', padding: '0.375rem',
+                }}>
+                  <button
+                    onClick={() => { setIsEditingTitle(true); setShowMenu(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
+                      border: 'none', background: 'none', cursor: 'pointer',
+                      fontSize: '0.8125rem', fontWeight: 500, color: 'var(--on-surface)',
+                      fontFamily: "'Inter', sans-serif", textAlign: 'left',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-container-low)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => { onDeleteList(list.id); setShowMenu(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
+                      border: 'none', background: 'none', cursor: 'pointer',
+                      fontSize: '0.8125rem', fontWeight: 500, color: 'var(--error)',
+                      fontFamily: "'Inter', sans-serif", textAlign: 'left',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--error-container)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                    Delete List
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Cards Container - Droppable */}
+      {/* ── Cards Droppable ── */}
       <Droppable droppableId={list.id} type="card">
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`min-h-[100px] transition-colors ${
-              snapshot.isDraggingOver ? 'bg-blue-50' : ''
-            }`}
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '0 0.75rem',
+              minHeight: '80px',
+              borderRadius: '0 0 0.5rem 0.5rem',
+              background: snapshot.isDraggingOver
+                ? 'rgba(0,54,173,0.04)'
+                : 'transparent',
+              transition: 'background 0.2s',
+            }}
           >
             {list.cards.map((card, index) => (
               <KanbanCard
@@ -129,26 +210,39 @@ export default function KanbanList({
         )}
       </Droppable>
 
-      {/* Add Card Button */}
-      <button
-        onClick={() => onAddCard(list.id)}
-        className="w-full mt-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
-      >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* ── Add Task dashed button ── */}
+      <div style={{ padding: '0.625rem 0.75rem 0.875rem' }}>
+        <button
+          onClick={() => onAddCard(list.id)}
+          style={{
+            width: '100%', padding: '0.625rem',
+            borderRadius: '0.625rem',
+            border: '1.5px dashed rgba(0,54,173,0.2)',
+            background: 'transparent',
+            color: 'var(--secondary)',
+            fontSize: '0.8125rem', fontWeight: 600,
+            fontFamily: "'Inter', sans-serif",
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = '#fff';
+            (e.currentTarget as HTMLElement).style.color = 'var(--primary)';
+            (e.currentTarget as HTMLElement).style.border = '1.5px dashed var(--primary)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+            (e.currentTarget as HTMLElement).style.color = 'var(--secondary)';
+            (e.currentTarget as HTMLElement).style.border = '1.5px dashed rgba(0,54,173,0.2)';
+          }}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        Add a card
-      </button>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add Task
+        </button>
+      </div>
     </div>
   );
 }
