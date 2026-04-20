@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Board } from '@/types/board';
-import BoardCard from '@/components/dashboard/BoardCard';
-import CreateBoardModal from '@/components/dashboard/CreateBoardModal';
-import EditBoardModal from '@/components/dashboard/EditBoardModal';
-import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
+import BoardCard from '@/components/mytasks/BoardCard';
+import CreateBoardModal from '@/components/mytasks/CreateBoardModal';
+import EditBoardModal from '@/components/mytasks/EditBoardModal';
+import DeleteConfirmModal from '@/components/mytasks/DeleteConfirmModal';
 
-export default function DashboardPage() {
+export default function MyTasksPage() {
   const { user, token, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 

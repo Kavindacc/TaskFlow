@@ -10,7 +10,7 @@ import KanbanList from '@/components/kanban/KanbanList';
 import AddListButton from '@/components/kanban/AddListButton';
 import CreateCardModal from '@/components/kanban/CreateCardModal';
 import CardDetailModal from '@/components/kanban/CardDetailModal';
-import ManageMembersModal from '@/components/dashboard/ManageMembersModal';
+import ManageMembersModal from '@/components/mytasks/ManageMembersModal';
 import { useBoardSocket } from '@/hooks/useBoardSocket';
 
 export default function BoardPage() {

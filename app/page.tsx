@@ -607,22 +607,22 @@ export default function HomePage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: '6rem 1.5rem', background: 'var(--surface-container-low)' }}>
+      <section style={{ padding: '6rem 1.5rem', background: 'var(--on-surface)' }}>
         <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             padding: '0.375rem 0.875rem', borderRadius: '9999px',
-            background: 'rgba(0,54,173,0.08)', color: 'var(--primary)',
+            background: 'rgba(255, 255, 255, 0.08)', color: '#fff',
             fontSize: '0.8125rem', fontWeight: 600, marginBottom: '2rem',
-          }}>🎯 No credit card required</div>
+          }}>No credit card required</div>
           <h2 style={{
             fontSize: 'clamp(2rem, 4.5vw, 3.25rem)',
             fontWeight: 900, letterSpacing: '-0.03em',
-            color: 'var(--on-surface)', marginBottom: '1.25rem', lineHeight: 1.1,
+            color: '#fff', marginBottom: '1.25rem', lineHeight: 1.1,
           }}>
             Your team is waiting.<br />Start shipping today.
           </h2>
-          <p style={{ fontSize: '1.0625rem', color: 'var(--secondary)', lineHeight: 1.75, marginBottom: '2.5rem' }}>
+          <p style={{ fontSize: '1.0625rem', color: '#aaaaaaff', lineHeight: 1.75, marginBottom: '2.5rem' }}>
             Join thousands of teams using TaskFlow to turn messy workflows into precise, collaborative momentum.
           </p>
           <div style={{ display: 'flex', gap: '0.875rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -633,8 +633,8 @@ export default function HomePage() {
               textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,54,173,0.28)',
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}>
-              Get started — it's free
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+              Get started ➜ it's free
+              {/* <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg> */}
             </Link>
             <Link href="/sign-in" style={{
               padding: '0.875rem 1.75rem', borderRadius: '0.5rem',
@@ -643,7 +643,7 @@ export default function HomePage() {
               boxShadow: '0 4px 16px rgba(11,28,48,0.06)',
             }}>Sign in instead</Link>
           </div>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--secondary)' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#aaaaaaff' }}>
             Free forever for small teams · No setup required · Real-time from day one
           </p>
         </div>
@@ -663,9 +663,9 @@ export default function HomePage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9375rem' }}>TaskFlow</span>
           </div>
           <p style={{ fontSize: '0.875rem' }}>
-            Built with precision · Express · Next.js · Socket.io · PostgreSQL
+            Built with precision · Express · Next.js · Node.js · Socket.io · PostgreSQL
           </p>
-          <p style={{ fontSize: '0.8125rem' }}>© 2026 TaskFlow. All rights reserved.</p>
+          <p style={{ fontSize: '0.8125rem' }}>© Kavinda Chandrasiri | 2026 TaskFlow. All rights reserved.</p>
         </div>
       </footer>
 
