@@ -166,20 +166,23 @@ export default function MyTasksPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 {subtasks.map((task) => (
                   <div key={task.id} style={{
-                    display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-                    background: '#ffffff', borderRadius: '0.5rem',
-                    border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                    cursor: 'pointer'
-                  }} onClick={() => toggleSubtask(task.id)}>
+                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem',
+                    background: task.done ? '#f8fafc' : '#ffffff', borderRadius: '0.375rem',
+                    border: '1px solid #f1f5f9', cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }} 
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = task.done ? '#f8fafc' : '#ffffff'; }}
+                  onClick={() => toggleSubtask(task.id)}>
                     <div style={{
-                      width: '1.25rem', height: '1.25rem', borderRadius: '0.375rem',
+                      width: '1rem', height: '1rem', borderRadius: '0.25rem',
                       background: task.done ? '#0036ad' : '#fff',
                       border: task.done ? 'none' : '2px solid #cbd5e1',
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                      {task.done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                      {task.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                     </div>
-                    <span style={{ fontSize: '0.9375rem', color: task.done ? '#94a3b8' : '#0b1c30', textDecoration: task.done ? 'line-through' : 'none', fontWeight: 500 }}>
+                    <span style={{ fontSize: '0.8125rem', color: task.done ? '#94a3b8' : '#4b5563', textDecoration: task.done ? 'line-through' : 'none', fontWeight: 500 }}>
                       {task.text}
                     </span>
                   </div>
@@ -187,11 +190,15 @@ export default function MyTasksPage() {
 
                 {/* Add Subtask Button */}
                 <button style={{
-                  marginTop: '0.5rem', width: '100%', padding: '1rem',
-                  borderRadius: '0.5rem', border: '2px dashed #cbd5e1', background: 'transparent',
-                  color: '#64748b', fontSize: '0.9375rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  marginTop: '0.25rem', width: '100%', padding: '0.625rem',
+                  borderRadius: '0.375rem', border: '1.5px dashed #cbd5e1', background: 'transparent',
+                  color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', cursor: 'pointer',
+                  transition: 'color 0.2s, border-color 0.2s'
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#64748b'; (e.currentTarget as HTMLElement).style.borderColor = '#94a3b8'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add Subtask
                 </button>
               </div>
