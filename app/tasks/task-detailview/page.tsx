@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/layout/Sidebar';
 import Image from 'next/image';
@@ -87,16 +89,63 @@ function TopBar({ user }: { user: any }) {
 }
 
 export default function MyTasksPage() {
-  const { user } = useAuth();
-  const [subtasks, setSubtasks] = useState(TASK_DATA.subtasks);
+  const { user, token } = useAuth();
+  const searchParams = useSearchParams();
+  const boardId = searchParams.get('boardId');
+  const listId = searchParams.get('listId');
+
+  const [boardContext, setBoardContext] = useState<any>(null);
+  const [listContext, setListContext] = useState<any>(null);
+  
+  const [subtasks, setSubtasks] = useState<any[]>(TASK_DATA.subtasks);
   const [comments, setComments] = useState(TASK_DATA.comments);
   const [newComment, setNewComment] = useState('');
 
-  const completedCount = subtasks.filter(s => s.done).length;
-  const progressPercent = Math.round((completedCount / subtasks.length) * 100);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskText, setNewTaskText] = useState('');
 
-  const toggleSubtask = (id: number) => {
-    setSubtasks(subtasks.map(s => s.id === id ? { ...s, done: !s.done } : s));
+  useEffect(() => {
+    if (!token || !boardId || !listId) return;
+    const fetchBoard = async () => {
+      try {
+        const data = await api.boards.getById(token, boardId);
+        setBoardContext(data);
+        const foundList = data.lists?.find((l: any) => l.id === listId);
+        if (foundList) {
+          setListContext(foundList);
+          // map actual cards to subtasks
+          // we use 'id' as a string now
+          setSubtasks(foundList.cards.map((c: any) => ({
+            id: c.id, text: c.title, done: false
+          })));
+        }
+      } catch(e) {
+        console.error('Failed fetching data', e);
+      }
+    };
+    fetchBoard();
+  }, [token, boardId, listId]);
+
+  const completedCount = subtasks.filter((s:any) => s.done).length;
+  const progressPercent = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
+
+  const toggleSubtask = (id: string | number) => {
+    setSubtasks(subtasks.map((s:any) => s.id === id ? { ...s, done: !s.done } : s));
+  };
+
+  const handleAddSubtask = async () => {
+    if (!newTaskText.trim() || !listId || !token) {
+      setIsAddingTask(false);
+      return;
+    }
+    try {
+      const data = await api.cards.create(token, listId, newTaskText);
+      setSubtasks([...subtasks, { id: data.id, text: data.title, done: false }]);
+      setNewTaskText('');
+      setIsAddingTask(false);
+    } catch (e) {
+      console.error('Failed to add subtask', e);
+    }
   };
 
   const handleAddComment = () => {
@@ -122,7 +171,7 @@ export default function MyTasksPage() {
         <div style={{ padding: '2rem 3.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Link href="/dashboard" style={{ fontSize: '0.8125rem', color: 'var(--secondary)', textDecoration: 'none' }}>Projects</Link>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-          <span style={{ fontSize: '0.8125rem', color: 'var(--secondary)' }}>The High-Performance Lab</span>
+          <span style={{ fontSize: '0.8125rem', color: 'var(--secondary)' }}>{boardContext?.title || 'The High-Performance Lab'}</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
           <span style={{ fontSize: '0.8125rem', color: 'var(--on-surface)', fontWeight: 600 }}>Task Detail</span>
         </div>
@@ -135,7 +184,7 @@ export default function MyTasksPage() {
             
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0b1c30', letterSpacing: '-0.04em', lineHeight: 1.1, maxWidth: '80%' }}>
-                {TASK_DATA.title}
+                {listContext?.title || TASK_DATA.title}
               </h1>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.625rem', border: 'none', background: 'var(--surface-container-low)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface)' }}>
@@ -188,19 +237,41 @@ export default function MyTasksPage() {
                   </div>
                 ))}
 
-                {/* Add Subtask Button */}
-                <button style={{
-                  marginTop: '0.25rem', width: '100%', padding: '0.625rem',
-                  borderRadius: '0.375rem', border: '1.5px dashed #cbd5e1', background: 'transparent',
-                  color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', cursor: 'pointer',
-                  transition: 'color 0.2s, border-color 0.2s'
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#64748b'; (e.currentTarget as HTMLElement).style.borderColor = '#94a3b8'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Add Subtask
-                </button>
+                {/* Add Subtask Button / Input */}
+                {isAddingTask ? (
+                  <div style={{ marginTop: '0.25rem', padding: '0.5rem', background: '#fff', borderRadius: '0.375rem', border: '1px solid #0036ad', boxShadow: '0 0 0 2px rgba(0,54,173,0.1)' }}>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newTaskText}
+                      onChange={e => setNewTaskText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleAddSubtask();
+                        if (e.key === 'Escape') setIsAddingTask(false);
+                      }}
+                      placeholder="What needs to be done?"
+                      style={{ width: '100%', border: 'none', outline: 'none', fontSize: '0.8125rem', fontFamily: "'Inter', sans-serif", color: '#0b1c30' }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <button onClick={handleAddSubtask} style={{ padding: '0.25rem 0.75rem', background: '#0036ad', color: '#fff', border: 'none', borderRadius: '0.25rem', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                      <button onClick={() => setIsAddingTask(false)} style={{ padding: '0.25rem 0.75rem', background: 'transparent', color: '#64748b', border: 'none', fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button style={{
+                    marginTop: '0.25rem', width: '100%', padding: '0.625rem',
+                    borderRadius: '0.375rem', border: '1.5px dashed #cbd5e1', background: 'transparent',
+                    color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', cursor: 'pointer',
+                    transition: 'color 0.2s, border-color 0.2s'
+                  }}
+                  onClick={() => setIsAddingTask(true)}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#64748b'; (e.currentTarget as HTMLElement).style.borderColor = '#94a3b8'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Subtask
+                  </button>
+                )}
               </div>
             </div>
 
@@ -328,7 +399,7 @@ export default function MyTasksPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                     <span style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>Project</span>
                   </div>
-                  <Link href="/boards" style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0036ad', textDecoration: 'none' }}>{TASK_DATA.project}</Link>
+                  <Link href="/boards" style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0036ad', textDecoration: 'none' }}>{boardContext?.title || TASK_DATA.project}</Link>
                 </div>
               </div>
             </div>

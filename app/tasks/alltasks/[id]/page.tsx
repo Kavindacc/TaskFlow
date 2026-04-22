@@ -141,7 +141,7 @@ export default function AllTasksPage() {
                     <div key={list.id} style={{ background: '#fff', borderRadius: '1rem', border: '1px solid var(--surface-container)', overflow: 'hidden', boxShadow: '0 4px 16px rgba(7, 18, 30, 0.02)' }}>
                       
                       {/* List Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.5rem', background: '#b7ceffff', borderBottom: '1px solid var(--surface-container)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.5rem', background: '#d2e1ffff', borderBottom: '1px solid var(--surface-container)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
                           <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0b1c30', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                             {list.title}
@@ -162,7 +162,7 @@ export default function AllTasksPage() {
                           list.cards.map((card, idx) => (
                             <Link 
                               key={card.id} 
-                              href="/tasks/task-detailview" 
+                              href={`/tasks/task-detailview?boardId=${boardId}&listId=${list.id}`} 
                               style={{ 
                                 textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', 
                                 marginBottom: idx !== list.cards.length - 1 ? '0.5rem' : '0',
