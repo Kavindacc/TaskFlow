@@ -51,6 +51,8 @@ export interface Card {
   description: string | null;
   order: number;
   listId: string;
+  isComplete?: boolean;
+  assigneeId?: string | null;
   labels: string[];
   dueDate: string | null;
   comments?: Comment[];

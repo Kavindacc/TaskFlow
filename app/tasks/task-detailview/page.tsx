@@ -116,7 +116,7 @@ export default function MyTasksPage() {
           // map actual cards to subtasks
           // we use 'id' as a string now
           setSubtasks(foundList.cards.map((c: any) => ({
-            id: c.id, text: c.title, done: false
+            id: c.id, text: c.title, done: c.isComplete ?? false
           })));
         }
       } catch(e) {
@@ -129,8 +129,26 @@ export default function MyTasksPage() {
   const completedCount = subtasks.filter((s:any) => s.done).length;
   const progressPercent = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
 
-  const toggleSubtask = (id: string | number) => {
-    setSubtasks(subtasks.map((s:any) => s.id === id ? { ...s, done: !s.done } : s));
+  const toggleSubtask = async (id: string | number) => {
+    // Find the task to get its new status
+    const targetTask = subtasks.find(s => s.id === id);
+    if (!targetTask || !token) return;
+    
+    const newStatus = !targetTask.done;
+    
+    // Optimistic update
+    setSubtasks(subtasks.map((s:any) => s.id === id ? { ...s, done: newStatus } : s));
+
+    // Persist to DB
+    try {
+      await api.cards.update(token, id.toString(), {
+        isComplete: newStatus
+      });
+    } catch (e) {
+      console.error('Failed to toggle completion', e);
+      // Revert if failed
+      setSubtasks(subtasks.map((s:any) => s.id === id ? { ...s, done: !newStatus } : s));
+    }
   };
 
   const handleAddSubtask = async () => {

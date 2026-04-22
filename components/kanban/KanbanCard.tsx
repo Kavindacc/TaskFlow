@@ -105,14 +105,24 @@ export default function KanbanCard({ card, index, onClick }: KanbanCardProps) {
           )}
 
           {/* Title */}
-          <p style={{
-            fontSize: '0.875rem', fontWeight: 600, color: 'var(--on-surface)',
-            lineHeight: 1.45, marginBottom: '0.5rem',
-            textDecoration: card.dueDate && isOverdue ? 'line-through' : 'none',
-            opacity: card.dueDate && isOverdue ? 0.6 : 1,
-          }}>
-            {card.title}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <div style={{
+              width: '1rem', height: '1rem', borderRadius: '0.25rem', marginTop: '0.125rem', flexShrink: 0,
+              background: card.isComplete ? '#0036ad' : 'transparent',
+              border: card.isComplete ? 'none' : '2px solid #cbd5e1',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {card.isComplete && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+            <p style={{
+              fontSize: '0.875rem', fontWeight: 600, color: card.isComplete ? '#94a3b8' : 'var(--on-surface)',
+              lineHeight: 1.45,
+              textDecoration: card.isComplete || (card.dueDate && isOverdue) ? 'line-through' : 'none',
+              opacity: card.isComplete || (card.dueDate && isOverdue) ? 0.6 : 1,
+            }}>
+              {card.title}
+            </p>
+          </div>
 
           {/* Description preview */}
           {card.description && (

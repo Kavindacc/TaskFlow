@@ -132,6 +132,7 @@ export default function BoardPage() {
       const response = await api.cards.update(token, cardId, {
         title: data.title, description: data.description ?? undefined,
         labels: data.labels, dueDate: data.dueDate ?? null,
+        isComplete: data.isComplete, assigneeId: data.assigneeId,
       });
       setBoard({ ...board, lists: board.lists?.map(l => ({ ...l, cards: l.cards.map(c => c.id === cardId ? { ...c, ...response.card } : c) })) });
       showToast('Task updated!', 'success');
@@ -444,6 +445,7 @@ export default function BoardPage() {
       <CardDetailModal
         card={selectedCard}
         isOpen={!!selectedCard}
+        members={board?.members ?? []}
         onClose={() => setSelectedCard(null)}
         onUpdate={handleUpdateCard}
         onDelete={handleDeleteCard}

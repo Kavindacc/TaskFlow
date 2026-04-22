@@ -149,6 +149,8 @@ export const api = {
       description?: string;
       labels?: string[];
       dueDate?: string | null;
+      isComplete?: boolean;
+      assigneeId?: string | null;
     }) =>
       fetchAPI(`/api/cards/${id}`, {
         method: 'PUT',
