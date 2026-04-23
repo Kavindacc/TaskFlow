@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, Comment } from '@/types/board';
+import { Card, Comment, BoardMember } from '@/types/board';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CardDetailModalProps {
   card: Card | null;
   isOpen: boolean;
+  members: BoardMember[];
   onClose: () => void;
   onUpdate: (cardId: string, data: Partial<Card>) => Promise<void>;
   onDelete: (cardId: string) => Promise<void>;
@@ -47,6 +48,7 @@ const getInitials = (name: string | null, email: string) => {
 export default function CardDetailModal({
   card,
   isOpen,
+  members,
   onClose,
   onUpdate,
   onDelete,
@@ -58,6 +60,8 @@ export default function CardDetailModal({
   const [description, setDescription] = useState('');
   const [labels, setLabels] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -82,6 +86,8 @@ export default function CardDetailModal({
       setDueDate(
         card.dueDate ? new Date(card.dueDate).toISOString().split('T')[0] : ''
       );
+      setIsComplete(card.isComplete ?? false);
+      setAssigneeId(card.assigneeId ?? null);
       setShowDeleteConfirm(false);
       setTitleEditing(false);
       setCommentText('');
@@ -124,7 +130,9 @@ export default function CardDetailModal({
     description !== (card.description ?? '') ||
     JSON.stringify(labels) !== JSON.stringify(card.labels ?? []) ||
     dueDate !==
-      (card.dueDate ? new Date(card.dueDate).toISOString().split('T')[0] : '');
+      (card.dueDate ? new Date(card.dueDate).toISOString().split('T')[0] : '') ||
+    isComplete !== (card.isComplete ?? false) ||
+    assigneeId !== (card.assigneeId ?? null);
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -135,6 +143,8 @@ export default function CardDetailModal({
         description: description.trim() || null,
         labels,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+        isComplete,
+        assigneeId,
       });
       onClose();
     } finally {
@@ -257,6 +267,40 @@ export default function CardDetailModal({
 
         {/* Body — scrollable */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Status & Assignment Row */}
+          <div className="flex items-center gap-6 pb-6 border-b border-gray-100">
+            {/* Mark Complete */}
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors border-2 ${isComplete ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-500'}`}>
+                {isComplete && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <input
+                type="checkbox"
+                className="hidden"
+                checked={isComplete}
+                onChange={(e) => setIsComplete(e.target.checked)}
+              />
+              <span className={`text-sm font-semibold ${isComplete ? 'text-gray-500 line-through' : 'text-gray-700'}`}>Mark as Complete</span>
+            </label>
+
+            {/* Assignee */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Assignee</span>
+              <select
+                value={assigneeId || ''}
+                onChange={(e) => setAssigneeId(e.target.value || null)}
+                className="text-sm font-semibold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="">Unassigned</option>
+                {members.map(member => (
+                  <option key={member.user.id} value={member.user.id}>
+                    {member.user.name || member.user.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           {/* Description */}
           <div>

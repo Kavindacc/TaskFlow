@@ -29,9 +29,13 @@ export interface Board {
 export interface List {
   id: string;
   title: string;
-  order: number;
   boardId: string;
+  order: number;
   cards: Card[];
+  isComplete?: boolean;
+  assigneeId?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Comment {
@@ -51,6 +55,8 @@ export interface Card {
   description: string | null;
   order: number;
   listId: string;
+  isComplete?: boolean;
+  assigneeId?: string | null;
   labels: string[];
   dueDate: string | null;
   comments?: Comment[];
