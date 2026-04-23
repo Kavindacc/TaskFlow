@@ -10,37 +10,37 @@ import Image from 'next/image';
 
 // ── Mock Data for Portfolio Demo ──────────────────────────────────────────
 const TASK_DATA = {
-  title: 'Finalize structural integrity reports for Phase 2 foundation',
-  description: 'Verification of load-bearing capacities and environmental stress tests required before moving to the skeletal assembly. Coordinate with the seismic engineering team.',
-  project: 'Urban Zenith',
-  priority: 'HIGH',
-  dueDate: 'Oct 24, 2023',
-  assignee: { name: 'Marcus Thorne', avatar: '/images/avatar-marcus.jpg', color: '#1a1a1a' },
-  tags: ['Engineering', 'Phase 2', 'Compliance'],
-  effort: { logged: 8, total: 12 },
+  title: '',
+  description: '',
+  project: '',
+  priority: '',
+  dueDate: '',
+  assignee: { name: '', avatar: '', color: '' },
+  tags: [''],
+  effort: { logged: 0, total: 0 },
   subtasks: [
-    { id: 1, text: 'Review initial soil samples from zone 4B', done: true },
-    { id: 2, text: 'Coordinate with external seismic consultant', done: true },
-    { id: 3, text: 'Generate preliminary stress heatmaps', done: true },
-    { id: 4, text: 'Finalize documentation for local council review', done: false },
-    { id: 5, text: 'Submit sign-off request to Head of Engineering', done: false },
+    { id: 1, text: '', done: false },
+    { id: 2, text: '', done: false },
+    { id: 3, text: '', done: false },
+    { id: 4, text: '', done: false },
+    { id: 5, text: '', done: false },
   ],
   comments: [
     {
       id: 1,
-      author: 'Marcus Thorne',
-      role: 'SENIOR ENGINEER',
-      time: '2H AGO',
-      text: "I've just uploaded the revised seismic data for the northern quadrant. We need to account for the slight variance in soil density.",
-      avatarColor: '#0b1c30',
+      author: '',
+      role: '',
+      time: '',
+      text: "",
+      avatarColor: '',
     },
     {
       id: 2,
-      author: 'Sarah Chen',
-      role: 'ARCHITECT',
-      time: '45M AGO',
-      text: "Acknowledged. I'll integrate these changes into the BIM model by EOD. Marcus, let's sync for 5 mins tomorrow morning.",
-      avatarColor: '#2d6a4f',
+      author: '',
+      role: '',
+      time: '',
+      text: "",
+      avatarColor: '',
     }
   ]
 };
@@ -96,11 +96,15 @@ export default function MyTasksPage() {
 
   const [boardContext, setBoardContext] = useState<any>(null);
   const [listContext, setListContext] = useState<any>(null);
-  
-  const [subtasks, setSubtasks] = useState<any[]>(TASK_DATA.subtasks);
-  const [comments, setComments] = useState(TASK_DATA.comments);
-  const [newComment, setNewComment] = useState('');
 
+  // Editable list-level properties
+  const [priority, setPriority] = useState<string>('');
+  const [dueDate, setDueDate] = useState<string>('');
+  const [effortTotal, setEffortTotal] = useState<number>(0);
+  const [effortLogged, setEffortLogged] = useState<number>(0);
+  const [savingProps, setSavingProps] = useState(false);
+
+  const [subtasks, setSubtasks] = useState<any[]>([]);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
 
@@ -113,8 +117,10 @@ export default function MyTasksPage() {
         const foundList = data.lists?.find((l: any) => l.id === listId);
         if (foundList) {
           setListContext(foundList);
-          // map actual cards to subtasks
-          // we use 'id' as a string now
+          setPriority(foundList.priority || '');
+          setDueDate(foundList.dueDate ? new Date(foundList.dueDate).toISOString().slice(0, 10) : '');
+          setEffortTotal(foundList.effortTotal || 0);
+          setEffortLogged(foundList.effortLogged || 0);
           setSubtasks(foundList.cards.map((c: any) => ({
             id: c.id, text: c.title, done: c.isComplete ?? false
           })));
@@ -168,10 +174,7 @@ export default function MyTasksPage() {
 
   const handleListPropertyUpdate = async (data: { isComplete?: boolean, assigneeId?: string | null }) => {
     if (!token || !listId || !listContext) return;
-    
-    // Optimistic UI update
     setListContext({ ...listContext, ...data });
-
     try {
       await api.lists.update(token, listId, data);
     } catch (e) {
@@ -179,16 +182,33 @@ export default function MyTasksPage() {
     }
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments([...comments, {
-      id: Date.now(),
-      author: user?.name || user?.email?.split('@')[0] || 'You',
-      role: 'USER', time: 'JUST NOW',
-      text: newComment, avatarColor: '#0369a1'
-    }]);
-    setNewComment('');
+  const handleSaveProps = async () => {
+    if (!token || !listId) return;
+    setSavingProps(true);
+    try {
+      await api.lists.update(token, listId, {
+        priority,
+        dueDate: dueDate || null,
+        effortTotal,
+        effortLogged,
+      });
+      setListContext((prev: any) => ({ ...prev, priority, dueDate, effortTotal, effortLogged }));
+    } catch (e) {
+      console.error('Failed to save props', e);
+    } finally {
+      setSavingProps(false);
+    }
   };
+
+  // Aggregate all unique labels across every card on this board
+  const uniqueTags: string[] = Array.from(
+    new Set(
+      (boardContext?.lists ?? [])
+        .flatMap((l: any) => l.cards ?? [])
+        .flatMap((c: any) => c.labels ?? [])
+        .filter(Boolean)
+    )
+  );
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#f8f9ff', fontFamily: "'Inter', sans-serif" }}>
@@ -345,7 +365,9 @@ export default function MyTasksPage() {
             <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
               <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.1em', marginBottom: '1rem' }}>TASK PROPERTIES</h4>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+                {/* Assignee */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -354,12 +376,7 @@ export default function MyTasksPage() {
                   <select
                     value={listContext?.assigneeId || ''}
                     onChange={(e) => handleListPropertyUpdate({ assigneeId: e.target.value || null })}
-                    style={{
-                      fontSize: '0.75rem', fontWeight: 600, color: '#0b1c30', 
-                      background: '#fff', border: '1px solid #cbd5e1', 
-                      borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer',
-                      maxWidth: '150px'
-                    }}
+                    style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0b1c30', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer', maxWidth: '160px' }}
                   >
                     <option value="">Unassigned</option>
                     {boardContext?.members?.map((member: any) => (
@@ -370,29 +387,60 @@ export default function MyTasksPage() {
                   </select>
                 </div>
 
+                {/* Priority */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M3 3h18M3 9h18M3 15h12"/></svg>
                     <span style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>Priority</span>
                   </div>
-                  <span style={{ fontSize: '0.625rem', fontWeight: 800, padding: '0.125rem 0.5rem', borderRadius: '9999px', background: '#fee2e2', color: '#dc2626', letterSpacing: '0.05em' }}>{TASK_DATA.priority}</span>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    style={{
+                      fontSize: '0.75rem', fontWeight: 700, border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer',
+                      background: priority === 'HIGH' ? '#fef2f2' : priority === 'MEDIUM' ? '#fffbeb' : priority === 'LOW' ? '#f0fdf4' : '#f8fafc',
+                      color: priority === 'HIGH' ? '#dc2626' : priority === 'MEDIUM' ? '#d97706' : priority === 'LOW' ? '#16a34a' : '#64748b',
+                    }}
+                  >
+                    <option value="">None</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
+                  </select>
                 </div>
 
+                {/* Due Date */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     <span style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>Due Date</span>
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0b1c30' }}>{TASK_DATA.dueDate}</span>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0b1c30', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer' }}
+                  />
                 </div>
 
+                {/* Project */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                     <span style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>Project</span>
                   </div>
-                  <Link href="/boards" style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0036ad', textDecoration: 'none' }}>{boardContext?.title || TASK_DATA.project}</Link>
+                  <Link href="/boards" style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0036ad', textDecoration: 'none' }}>{boardContext?.title || '—'}</Link>
                 </div>
+
+                {/* Save button */}
+                <button
+                  onClick={handleSaveProps}
+                  disabled={savingProps}
+                  style={{ width: '100%', marginTop: '0.25rem', padding: '0.5rem', borderRadius: '0.5rem', border: 'none', background: '#0036ad', color: '#fff', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer', opacity: savingProps ? 0.6 : 1, transition: 'opacity 0.2s' }}
+                >
+                  {savingProps ? 'Saving…' : 'Save Properties'}
+                </button>
               </div>
             </div>
 
@@ -400,23 +448,46 @@ export default function MyTasksPage() {
             <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
               <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.1em', marginBottom: '1rem' }}>TAGS</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {TASK_DATA.tags.map(tag => (
-                  <span key={tag} style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '0.25rem 0.625rem', borderRadius: '9999px', background: '#f1f5f9', color: '#475569' }}>
+                {uniqueTags.length > 0 ? uniqueTags.map(tag => (
+                  <span key={tag} style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '0.25rem 0.625rem', borderRadius: '9999px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>
                     {tag}
                   </span>
-                ))}
+                )) : (
+                  <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>No tags on this board yet.</span>
+                )}
               </div>
 
+              {/* Estimated Effort */}
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                   <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0b1c30' }}>Estimated Effort</span>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0b1c30' }}>{TASK_DATA.effort.total}h</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <input
+                      type="number" min="0" max="999"
+                      value={effortTotal}
+                      onChange={(e) => setEffortTotal(Number(e.target.value))}
+                      style={{ width: '3.5rem', padding: '0.2rem 0.4rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#0b1c30', outline: 'none', textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>h total</span>
+                  </div>
                 </div>
-                <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '9999px', marginBottom: '0.5rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${(TASK_DATA.effort.logged / TASK_DATA.effort.total) * 100}%`, height: '100%', background: '#0036ad' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Hours logged</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <input
+                      type="number" min="0" max={effortTotal || 999}
+                      value={effortLogged}
+                      onChange={(e) => setEffortLogged(Number(e.target.value))}
+                      style={{ width: '3.5rem', padding: '0.2rem 0.4rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.75rem', fontWeight: 700, color: '#0b1c30', outline: 'none', textAlign: 'center' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>h</span>
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.6875rem', color: '#64748b' }}>
-                  {TASK_DATA.effort.logged} hours logged of {TASK_DATA.effort.total} planned
+                <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
+                  <div style={{ width: `${effortTotal > 0 ? Math.min((effortLogged / effortTotal) * 100, 100) : 0}%`, height: '100%', background: '#0036ad', transition: 'width 0.3s' }} />
+                </div>
+                <p style={{ fontSize: '0.6875rem', color: '#64748b', marginTop: '0.375rem' }}>
+                  {effortLogged}h logged of {effortTotal}h planned
                 </p>
               </div>
 
@@ -425,10 +496,7 @@ export default function MyTasksPage() {
                   onClick={() => handleListPropertyUpdate({ isComplete: !listContext?.isComplete })}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', background: listContext?.isComplete ? '#0ea5e9' : 'linear-gradient(135deg, #1b4dd7, #0036ad)', color: '#fff', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,54,173,0.2)' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  {listContext?.isComplete ? 'Completed' : 'Mark as Complete'}
-                </button>
-                <button style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', background: '#fff', color: '#0b1c30', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  Log Time
+                  {listContext?.isComplete ? 'Completed ✓' : 'Mark as Complete'}
                 </button>
               </div>
             </div>
