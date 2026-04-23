@@ -109,11 +109,11 @@ export const api = {
         body: JSON.stringify({ title }),
       }),
 
-    update: (token: string, id: string, title: string) =>
+    update: (token: string, id: string, data: { title?: string; isComplete?: boolean; assigneeId?: string | null }) =>
       fetchAPI(`/api/lists/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify(data),
       }),
 
     delete: (token: string, id: string) =>

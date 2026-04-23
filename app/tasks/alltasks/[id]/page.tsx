@@ -56,6 +56,22 @@ export default function AllTasksPage() {
     fetchBoard();
   }, [token, boardId]);
 
+  const handleListUpdate = async (listId: string, data: { isComplete?: boolean, assigneeId?: string | null }) => {
+    if (!token || !board) return;
+    
+    // Optimistic update
+    setBoard({
+      ...board,
+      lists: board.lists.map(l => l.id === listId ? { ...l, ...data } : l)
+    });
+
+    try {
+      await api.lists.update(token, listId, data);
+    } catch (e) {
+      console.error('Failed to update list', e);
+    }
+  };
+
   if (authLoading || (!isAuthenticated && loading)) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)', alignItems: 'center', justifyContent: 'center' }}>
@@ -143,12 +159,52 @@ export default function AllTasksPage() {
                       {/* List Header */}
                       <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.5rem', background: '#d2e1ffff', borderBottom: '1px solid var(--surface-container)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                          <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0b1c30', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                          <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: list.isComplete ? 'var(--secondary)' : '#0b1c30', letterSpacing: '0.05em', textTransform: 'uppercase', textDecoration: list.isComplete ? 'line-through' : 'none' }}>
                             {list.title}
                           </h3>
                           <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '0.125rem 0.5rem', borderRadius: '9999px', background: '#fff', color: 'var(--secondary)', border: '1px solid var(--surface-container-low)' }}>
                             {list.cards.length}
                           </span>
+                        </div>
+
+                        {/* List Status & Assignee Controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                            <div style={{
+                              width: '1.25rem', height: '1.25rem', borderRadius: '0.25rem', 
+                              border: list.isComplete ? '2px solid #0284c7' : '2px solid #94a3b8',
+                              background: list.isComplete ? '#0284c7' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {list.isComplete && <svg width="12" height="12" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                            </div>
+                            <input 
+                              type="checkbox" 
+                              style={{ display: 'none' }} 
+                              checked={list.isComplete ?? false}
+                              onChange={(e) => handleListUpdate(list.id, { isComplete: e.target.checked })}
+                            />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: list.isComplete ? 'var(--secondary)' : '#0b1c30' }}>
+                              Mark Complete
+                            </span>
+                          </label>
+
+                          <select
+                            value={list.assigneeId || ''}
+                            onChange={(e) => handleListUpdate(list.id, { assigneeId: e.target.value || null })}
+                            style={{
+                              fontSize: '0.75rem', fontWeight: 600, color: '#0b1c30', 
+                              background: '#fff', border: '1px solid #cbd5e1', 
+                              borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer'
+                            }}
+                          >
+                            <option value="">Unassigned</option>
+                            {board.members?.map(member => (
+                              <option key={member.user.id} value={member.user.id}>
+                                {member.user.name || member.user.email}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
 
@@ -166,28 +222,29 @@ export default function AllTasksPage() {
                               style={{ 
                                 textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', 
                                 marginBottom: idx !== list.cards.length - 1 ? '0.5rem' : '0',
-                                background: '#ffffffff', borderRadius: '0.75rem',
-                                border: '1px solid #15202fff',
+                                background: card.isComplete ? '#f0fdf4' : '#ffffffff', borderRadius: '0.75rem',
+                                border: card.isComplete ? '1px solid #bbf7d0' : '1px solid #15202fff',
                                 transition: 'all 0.2s', cursor: 'pointer',
-                                boxShadow: '0 2px 4px rgba(11,28,48,0.02)'
+                                boxShadow: '0 2px 4px rgba(11,28,48,0.02)',
+                                opacity: card.isComplete ? 0.8 : 1
                               }}
                               onMouseEnter={e => { 
-                                (e.currentTarget as HTMLElement).style.background = '#f8fafc';
-                                (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1';
+                                (e.currentTarget as HTMLElement).style.background = card.isComplete ? '#dcfce7' : '#f8fafc';
                                 (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)';
                               }}
                               onMouseLeave={e => { 
-                                (e.currentTarget as HTMLElement).style.background = '#fff';
-                                (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0';
+                                (e.currentTarget as HTMLElement).style.background = card.isComplete ? '#f0fdf4' : '#fff';
                                 (e.currentTarget as HTMLElement).style.transform = 'none';
                               }}
                             >
                               <div style={{ flex: 3, display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                                 {/* Checkbox / Status Indicator */}
-                                <div style={{ marginTop: '0.125rem', width: '1.25rem', height: '1.25rem', borderRadius: '50%', border: '2px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+                                <div style={{ marginTop: '0.125rem', width: '1.25rem', height: '1.25rem', borderRadius: '50%', border: card.isComplete ? '2px solid #16a34a' : '2px solid #cbd5e1', background: card.isComplete ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {card.isComplete && <svg width="10" height="10" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                                </div>
                                 
                                 <div>
-                                  <div style={{ fontSize: '0.9375rem', fontWeight: 500, color: '#0b1c30', marginBottom: '0.375rem', lineHeight: 1.3 }}>
+                                  <div style={{ fontSize: '0.9375rem', fontWeight: 500, color: card.isComplete ? '#94a3b8' : '#0b1c30', marginBottom: '0.375rem', lineHeight: 1.3, textDecoration: card.isComplete ? 'line-through' : 'none' }}>
                                     {card.title}
                                   </div>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>

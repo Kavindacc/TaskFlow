@@ -166,6 +166,19 @@ export default function MyTasksPage() {
     }
   };
 
+  const handleListPropertyUpdate = async (data: { isComplete?: boolean, assigneeId?: string | null }) => {
+    if (!token || !listId || !listContext) return;
+    
+    // Optimistic UI update
+    setListContext({ ...listContext, ...data });
+
+    try {
+      await api.lists.update(token, listId, data);
+    } catch (e) {
+      console.error('Failed to update list properties', e);
+    }
+  };
+
   const handleAddComment = () => {
     if (!newComment.trim()) return;
     setComments([...comments, {
@@ -323,58 +336,6 @@ export default function MyTasksPage() {
               </div>
             </div>
 
-            {/* Team Discussion */}
-            <div>
-              <div style={{ padding: '0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0036ad" strokeWidth="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0b1c30' }}>Team Discussion</h3>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '0 0.5rem' }}>
-                {comments.map(c => (
-                  <div key={c.id} style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: c.avatarColor, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.875rem', fontWeight: 700 }}>
-                      {c.author[0].toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0b1c30' }}>{c.author}</span>
-                        <span style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--secondary)', letterSpacing: '0.05em' }}>{c.role} • {c.time}</span>
-                      </div>
-                      <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: '0 0.75rem 0.75rem 0.75rem', fontSize: '0.9375rem', color: '#334155', lineHeight: 1.5, marginBottom: '0.5rem' }}>
-                        {c.text}
-                      </div>
-                      <div style={{ display: 'flex', gap: '1rem', paddingLeft: '0.5rem' }}>
-                        <button style={{ background: 'none', border: 'none', fontSize: '0.6875rem', fontWeight: 700, color: '#0036ad', cursor: 'pointer' }}>REPLY</button>
-                        <button style={{ background: 'none', border: 'none', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--secondary)', cursor: 'pointer' }}>LIKE {c.id === 2 && '(1)'}</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Write comment */}
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#0369a1', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.875rem', fontWeight: 700 }}>
-                    {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
-                    <textarea
-                      value={newComment}
-                      onChange={e => setNewComment(e.target.value)}
-                      placeholder="Write a comment..."
-                      rows={3}
-                      style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #cbd5e1', background: '#f1f5f9', fontSize: '0.9375rem', fontFamily: "'Inter', sans-serif", outline: 'none', resize: 'none' }}
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      style={{ padding: '0.625rem 1.5rem', borderRadius: '0.5rem', border: 'none', background: 'linear-gradient(135deg, #0036ad, #1b4dd7)', color: '#fff', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,54,173,0.2)' }}
-                    >
-                      Post Comment
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right Sidebar (Properties Panel) */}
@@ -390,10 +351,23 @@ export default function MyTasksPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 500 }}>Assignee</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0b1c30' }}>{TASK_DATA.assignee.name}</span>
-                    <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: TASK_DATA.assignee.color, color: '#fff', fontSize: '0.5rem', display: 'flex', alignItems: 'center', justifyItems: 'center', fontWeight: 'bold', justifyContent: 'center' }}>M</div>
-                  </div>
+                  <select
+                    value={listContext?.assigneeId || ''}
+                    onChange={(e) => handleListPropertyUpdate({ assigneeId: e.target.value || null })}
+                    style={{
+                      fontSize: '0.75rem', fontWeight: 600, color: '#0b1c30', 
+                      background: '#fff', border: '1px solid #cbd5e1', 
+                      borderRadius: '0.5rem', padding: '0.25rem 0.5rem', outline: 'none', cursor: 'pointer',
+                      maxWidth: '150px'
+                    }}
+                  >
+                    <option value="">Unassigned</option>
+                    {boardContext?.members?.map((member: any) => (
+                      <option key={member.user.id} value={member.user.id}>
+                        {member.user.name || member.user.email}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -447,9 +421,11 @@ export default function MyTasksPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.5rem' }}>
-                <button style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', background: 'linear-gradient(135deg, #1b4dd7, #0036ad)', color: '#fff', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,54,173,0.2)' }}>
+                <button 
+                  onClick={() => handleListPropertyUpdate({ isComplete: !listContext?.isComplete })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: 'none', background: listContext?.isComplete ? '#0ea5e9' : 'linear-gradient(135deg, #1b4dd7, #0036ad)', color: '#fff', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,54,173,0.2)' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  Mark as Complete
+                  {listContext?.isComplete ? 'Completed' : 'Mark as Complete'}
                 </button>
                 <button style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', background: '#fff', color: '#0b1c30', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   Log Time
