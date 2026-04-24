@@ -107,7 +107,7 @@ export default function TeamManagementPage() {
     try {
       await api.boards.removeMember(token, selectedBoardId, userId);
       setBoards(prev => prev.map(b => b.id === selectedBoardId
-        ? { ...b, members: b.members.filter(m => m.user.id !== userId) }
+        ? {...b, members: b.members.filter(m => m.user.id !== userId) }
         : b));
     } catch (e) { console.error(e); }
     finally { setRemovingId(null); }

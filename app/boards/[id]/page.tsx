@@ -93,7 +93,7 @@ export default function BoardPage() {
   const handleUpdateListTitle = async (listId: string, title: string) => {
     if (!token || !board) return;
     try {
-      await api.lists.update(token, listId, title);
+      await api.lists.update(token, listId, { title });
       setBoard({ ...board, lists: board.lists?.map(l => l.id === listId ? { ...l, title } : l) });
     } catch (e: any) { showToast(e.message || 'Failed to update list', 'error'); }
   };

@@ -195,11 +195,9 @@ export default function DashboardPage() {
         if (board.owner) memberIds.add(board.owner.id ?? board.ownerId);
 
         board.lists?.forEach(list => {
-          const isDoneList = list.title.toLowerCase().includes('done') ||
-            list.title.toLowerCase().includes('complete');
-          const isProgressList = list.title.toLowerCase().includes('progress') ||
-            list.title.toLowerCase().includes('doing') ||
-            list.title.toLowerCase().includes('review');
+          const t = (list.title ?? '').toLowerCase();
+          const isDoneList     = t.includes('done') || t.includes('complete');
+          const isProgressList = t.includes('progress') || t.includes('doing') || t.includes('review');
 
           list.cards?.forEach(card => {
             totalCards++;
