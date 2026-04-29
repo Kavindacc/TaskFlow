@@ -34,7 +34,7 @@ function AnimatedCounter({ end, suffix = '' }: { end: number; suffix?: string })
 function PreviewCard({
   title, label, labelColor, avatar, avatarColor, delay = 0
 }: {
-  title: string; label: string; labelColor: string;
+  title: string; label: string; labelColor: { bg: string; text: string };
   avatar: string; avatarColor: string; delay?: number;
 }) {
   return (
@@ -67,7 +67,7 @@ function PreviewCard({
 }
 
 // ── Feature Pill ─────────────────────────────────────────────────────────────
-function FeaturePill({ icon, label }: { icon: string; label: string }) {
+function FeaturePill({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div style={{
       display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
@@ -75,7 +75,7 @@ function FeaturePill({ icon, label }: { icon: string; label: string }) {
       background: 'var(--surface-container-low)',
       color: 'var(--on-surface-variant)', fontSize: '0.8125rem', fontWeight: 500,
     }}>
-      <span>{icon}</span>{label}
+      {icon}{label}
     </div>
   );
 }
@@ -130,11 +130,95 @@ function TestimonialCard({ quote, name, role, color, delay }: { quote: string; n
   );
 }
 
+// ── SVG Icon Set ─────────────────────────────────────────────────────────────
+const Icons = {
+  Bolt: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  ),
+  Lock: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  ),
+  Move: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+      <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+      <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+    </svg>
+  ),
+  Chat: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+  Users: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  Kanban: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="9" rx="1"/>
+      <rect x="14" y="3" width="7" height="5" rx="1"/>
+      <rect x="14" y="12" width="7" height="9" rx="1"/>
+      <rect x="3" y="16" width="7" height="5" rx="1"/>
+    </svg>
+  ),
+  Shield: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  ),
+  MessageSquare: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+  Tag: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  ),
+  UserCheck: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="8.5" cy="7" r="4"/>
+      <polyline points="17 11 19 13 23 9"/>
+    </svg>
+  ),
+  Rocket: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </svg>
+  ),
+  ArrowRight: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+    </svg>
+  ),
+  Play: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="10 8 16 12 10 16 10 8"/>
+    </svg>
+  ),
+};
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user, logout, loading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -213,7 +297,7 @@ export default function HomePage() {
                     color: '#fff', fontSize: '0.875rem', fontWeight: 600,
                     textDecoration: 'none', boxShadow: '0 4px 16px rgba(0,54,173,0.25)',
                     transition: 'all 0.2s',
-                  }}>Get started free →</Link>
+                  }}>Get started free</Link>
                 </>
               )}
             </div>
@@ -234,7 +318,7 @@ export default function HomePage() {
           backgroundSize: '48px 48px',
         }} />
 
-        {/* Radial glow */}
+        {/* Radial glows */}
         <div style={{
           position: 'absolute', top: '-10rem', right: '-10rem', zIndex: 0,
           width: '40rem', height: '40rem', borderRadius: '50%',
@@ -286,7 +370,7 @@ export default function HomePage() {
                 fontSize: '1.0625rem', color: 'var(--secondary)',
                 lineHeight: 1.75, marginBottom: '2.5rem', maxWidth: '26rem',
               }}>
-                TaskFlow brings boards, timelines, docs, and your team into one precision-built workspace — designed for the way high-performing teams actually work.
+                TaskFlow brings boards, timelines, docs, and your team into one precision-built workspace, designed for the way high-performing teams actually work.
               </p>
 
               {/* CTAs */}
@@ -301,31 +385,30 @@ export default function HomePage() {
                   transition: 'all 0.2s',
                 }}>
                   Start for free
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                  <Icons.ArrowRight />
                 </Link>
                 <Link href="/sign-in" style={{
                   padding: '0.75rem 1.25rem', borderRadius: '0.5rem',
                   fontSize: '0.9375rem', fontWeight: 500, color: 'var(--on-surface)',
                   textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
                 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <Icons.Play />
                   Watch demo
                 </Link>
               </div>
 
               {/* Feature pills */}
               <div className="animate-fade-up delay-400" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <FeaturePill icon="⚡" label="Real-time sync" />
-                <FeaturePill icon="🔒" label="JWT secured" />
-                <FeaturePill icon="🧲" label="Drag & drop" />
-                <FeaturePill icon="💬" label="Comments" />
-                <FeaturePill icon="👥" label="Team boards" />
+                <FeaturePill icon={<Icons.Bolt />} label="Real-time sync" />
+                <FeaturePill icon={<Icons.Lock />} label="JWT secured" />
+                <FeaturePill icon={<Icons.Move />} label="Drag and drop" />
+                <FeaturePill icon={<Icons.Chat />} label="Comments" />
+                <FeaturePill icon={<Icons.Users />} label="Team boards" />
               </div>
             </div>
 
             {/* Right — Kanban preview */}
             <div className="animate-fade-up delay-200 animate-float" style={{ position: 'relative' }}>
-              {/* Board chrome */}
               <div style={{
                 background: 'var(--surface-container-low)',
                 borderRadius: '1.25rem',
@@ -335,7 +418,7 @@ export default function HomePage() {
                 {/* Chrome bar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', paddingBottom: '0.875rem', borderBottom: '1px solid rgba(0,54,173,0.06)' }}>
                   <div style={{ display: 'flex', gap: '0.375rem' }}>
-                    {['#ff5f57','#febc2e','#28c840'].map(c => (
+                    {['#ff5f57', '#febc2e', '#28c840'].map(c => (
                       <div key={c} style={{ width: '10px', height: '10px', borderRadius: '50%', background: c }} />
                     ))}
                   </div>
@@ -350,9 +433,12 @@ export default function HomePage() {
 
                 {/* Board title */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--on-surface)' }}>🚀 Product Roadmap</span>
-                  <div style={{ display: 'flex', gap: '-0.375rem' }}>
-                    {['#0036ad','#2d6a4f','#7c3aed'].map((c, i) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icons.Rocket />
+                    <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--on-surface)' }}>Product Roadmap</span>
+                  </div>
+                  <div style={{ display: 'flex' }}>
+                    {['#0036ad', '#2d6a4f', '#7c3aed'].map((c, i) => (
                       <div key={i} style={{
                         width: '1.75rem', height: '1.75rem', borderRadius: '50%',
                         background: c, border: '2px solid #eff4ff',
@@ -423,7 +509,7 @@ export default function HomePage() {
               { val: 12000, suffix: '+', label: 'Active teams', note: 'across 40+ countries' },
               { val: 98, suffix: '%', label: 'Uptime SLA', note: 'enterprise grade' },
               { val: 2400000, suffix: '+', label: 'Tasks completed', note: 'this month alone' },
-              { val: 4.9, suffix: '/5', label: 'User rating', note: 'on G2 & Product Hunt' },
+              { val: 4.9, suffix: '/5', label: 'User rating', note: 'on G2 and Product Hunt' },
             ].map(({ val, suffix, label, note }) => (
               <div key={label} style={{
                 background: '#fff', borderRadius: '1rem', padding: '1.75rem',
@@ -446,46 +532,46 @@ export default function HomePage() {
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <p style={{ fontSize: '0.8125rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '0.75rem' }}>CAPABILITIES</p>
             <h2 style={{ fontSize: 'clamp(1.875rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--on-surface)', marginBottom: '1rem' }}>
-              Everything your team needs.<br />Nothing it doesn't.
+              Everything your team needs.<br />Nothing it does not.
             </h2>
             <p style={{ fontSize: '1.0625rem', color: 'var(--secondary)', maxWidth: '32rem', margin: '0 auto', lineHeight: 1.7 }}>
-              Purpose-built features that integrate seamlessly — from first task to shipped product.
+              Purpose-built features that integrate seamlessly, from first task to shipped product.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
             {[
               {
-                icon: '⚡', title: 'Real-Time Collaboration',
+                Icon: Icons.Bolt, title: 'Real-Time Collaboration',
                 desc: 'Socket.io powered sync broadcasts every move, comment, and update across all connected clients in under 50ms.',
                 tag: 'Live',
               },
               {
-                icon: '🧲', title: 'Intuitive Drag & Drop',
+                Icon: Icons.Kanban, title: 'Intuitive Drag and Drop',
                 desc: 'Reorder cards across lists, reorder entire lists, with full optimistic updates and automatic rollback on errors.',
                 tag: 'Interactive',
               },
               {
-                icon: '🔐', title: 'Enterprise-Grade Security',
+                Icon: Icons.Shield, title: 'Enterprise-Grade Security',
                 desc: 'JWT authentication with bcrypt password hashing and per-board access control. Your data never leaves your control.',
                 tag: 'Secure',
               },
               {
-                icon: '💬', title: 'Threaded Comments',
+                Icon: Icons.MessageSquare, title: 'Threaded Comments',
                 desc: 'Comment on any card with author avatars, relative timestamps, and clean deletion. Discussions stay close to the work.',
                 tag: 'Team',
               },
               {
-                icon: '🏷️', title: 'Smart Labels & Due Dates',
+                Icon: Icons.Tag, title: 'Smart Labels and Due Dates',
                 desc: 'Tag tasks with colored labels and deadlines. Overdue items surface automatically with a prominent alert badge.',
                 tag: 'Organized',
               },
               {
-                icon: '👥', title: 'Member Management',
+                Icon: Icons.UserCheck, title: 'Member Management',
                 desc: 'Invite teammates by email, assign them roles, and remove access instantly. Board visibility is always under control.',
                 tag: 'Collab',
               },
-            ].map(({ icon, title, desc, tag }, i) => (
+            ].map(({ Icon, title, desc, tag }, i) => (
               <div
                 key={title}
                 className="animate-fade-up"
@@ -505,8 +591,11 @@ export default function HomePage() {
                   <div style={{
                     width: '3rem', height: '3rem', borderRadius: '0.875rem',
                     background: 'var(--surface-container-low)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.375rem',
-                  }}>{icon}</div>
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--primary)',
+                  }}>
+                    <Icon />
+                  </div>
                   <span style={{
                     fontSize: '0.6875rem', fontWeight: 700, padding: '0.25rem 0.625rem',
                     borderRadius: '9999px', background: 'var(--surface-container-low)',
@@ -534,10 +623,10 @@ export default function HomePage() {
                 TaskFlow is built around a focused 4-step cycle that keeps your team aligned and your backlog clear.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
-                <WorkflowStep num="01" title="Create a Board" desc="Spin up a workspace for any project — product, marketing, or ops." delay={0} />
+                <WorkflowStep num="01" title="Create a Board" desc="Spin up a workspace for any project, whether product, marketing, or operations." delay={0} />
                 <WorkflowStep num="02" title="Build your Lists" desc="Define columns like Backlog, In Progress, Review, and Done." delay={100} />
-                <WorkflowStep num="03" title="Add & Assign Cards" desc="Create tasks with labels, due dates, and teammate assignments." delay={200} />
-                <WorkflowStep num="04" title="Ship together" desc="Drag cards across the board. Everyone sees changes live." delay={300} />
+                <WorkflowStep num="03" title="Add and Assign Cards" desc="Create tasks with labels, due dates, and teammate assignments." delay={200} />
+                <WorkflowStep num="04" title="Ship Together" desc="Drag cards across the board. Everyone sees changes live." delay={300} />
               </div>
             </div>
 
@@ -572,7 +661,7 @@ export default function HomePage() {
                       <strong style={{ color: 'var(--on-surface)' }}>{avatar}</strong>{' '}
                       {action}{' '}
                       <strong style={{ color: 'var(--primary)' }}>{card}</strong>
-                      {dest && <span style={{ color: 'var(--secondary)' }}> → {dest}</span>}
+                      {dest && <span style={{ color: 'var(--secondary)' }}> to {dest}</span>}
                     </p>
                   </div>
                   <span style={{ fontSize: '0.6875rem', color: 'var(--secondary)', flexShrink: 0 }}>{time}</span>
@@ -594,10 +683,10 @@ export default function HomePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
             <TestimonialCard
-              quote="TaskFlow replaced three separate tools for us. The real-time sync is genuinely magical — watching cards move across the board as my team works is something I never tire of."
+              quote="TaskFlow replaced three separate tools for us. The real-time sync is genuinely remarkable — watching cards move across the board as my team works is something I never tire of."
               name="Arjun Mehta" role="CTO, Stealth Startup" color="#0036ad" delay={0} />
             <TestimonialCard
-              quote="The UI is the most polished Kanban tool I've used. It genuinely feels like it was designed for engineers who care about aesthetics as much as performance."
+              quote="The UI is the most polished Kanban tool I have used. It genuinely feels like it was designed for engineers who care about aesthetics as much as performance."
               name="Sophia Reyes" role="Lead Engineer, FinTech" color="#7c3aed" delay={100} />
             <TestimonialCard
               quote="We went from chaos across 4 channels to one clear board in a week. The comment threading on cards alone saved us 5+ hours of standups per sprint."
@@ -622,7 +711,7 @@ export default function HomePage() {
           }}>
             Your team is waiting.<br />Start shipping today.
           </h2>
-          <p style={{ fontSize: '1.0625rem', color: '#aaaaaaff', lineHeight: 1.75, marginBottom: '2.5rem' }}>
+          <p style={{ fontSize: '1.0625rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '2.5rem' }}>
             Join thousands of teams using TaskFlow to turn messy workflows into precise, collaborative momentum.
           </p>
           <div style={{ display: 'flex', gap: '0.875rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -633,8 +722,8 @@ export default function HomePage() {
               textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,54,173,0.28)',
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             }}>
-              Get started ➜ it's free
-              {/* <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg> */}
+              Get started free
+              <Icons.ArrowRight />
             </Link>
             <Link href="/sign-in" style={{
               padding: '0.875rem 1.75rem', borderRadius: '0.5rem',
@@ -643,14 +732,14 @@ export default function HomePage() {
               boxShadow: '0 4px 16px rgba(11,28,48,0.06)',
             }}>Sign in instead</Link>
           </div>
-          <p style={{ fontSize: '0.8125rem', color: '#aaaaaaff' }}>
+          <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}>
             Free forever for small teams · No setup required · Real-time from day one
           </p>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer style={{ background: 'var(--on-surface)', color: 'rgba(255,255,255,0.5)', padding: '3rem 1.5rem' }}>
+      <footer style={{ background: 'var(--on-surface)', color: 'rgba(255,255,255,0.5)', padding: '3rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Image
@@ -663,9 +752,9 @@ export default function HomePage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9375rem' }}>TaskFlow</span>
           </div>
           <p style={{ fontSize: '0.875rem' }}>
-            Built with precision · Express · Next.js · Node.js · Socket.io · PostgreSQL
+            Built with Express · Next.js · Node.js · Socket.io · PostgreSQL
           </p>
-          <p style={{ fontSize: '0.8125rem' }}>© Kavinda Chandrasiri | 2026 TaskFlow. All rights reserved.</p>
+          <p style={{ fontSize: '0.8125rem' }}>© {new Date().getFullYear()} Kavinda Chandrasiri. All rights reserved.</p>
         </div>
       </footer>
 
