@@ -200,8 +200,11 @@ export default function BoardsPage() {
           ) : (
             /* Board grid */
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-              {filtered.map((board, i) => {
-                const totalCards = board.lists?.reduce((acc, l) => acc + (l.cards?.length ?? 0), 0) ?? 0;
+              {filtered.map((board: any, i) => {
+                const listCount = board._count?.lists ?? board.lists?.length ?? 0;
+                const totalCards = board.lists
+                  ? board.lists.reduce((acc: number, l: any) => acc + (l._count?.cards ?? l.cards?.length ?? 0), 0)
+                  : 0;
                 return (
                   <Link key={board.id} href={`/boards/${board.id}`} style={{ textDecoration: 'none' }}>
                     <div
@@ -223,7 +226,7 @@ export default function BoardsPage() {
                           {board.title}
                         </h3>
                         <p style={{ fontSize: '0.8125rem', color: 'var(--secondary)', marginBottom: '1.25rem' }}>
-                          {board.lists?.length ?? 0} lists · {totalCards} tasks
+                          {listCount} lists · {totalCards} tasks
                         </p>
 
                         {/* Member avatars */}

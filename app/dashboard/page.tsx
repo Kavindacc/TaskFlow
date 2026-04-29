@@ -174,43 +174,54 @@ export default function DashboardPage() {
     if (!authLoading && !isAuthenticated) router.push('/sign-in');
   }, [authLoading, isAuthenticated, router]);
 
-  // Fetch boards + compute stats
+  // Fetch boards + compute stats from real data
   const fetchData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
+      // Step 1: get board list
       const data = await api.boards.getAll(token);
-      const boardList: Board[] = data.boards || data || [];
-      setBoards(boardList);
+      const summaries: any[] = data.boards || data || [];
+      setBoards(summaries);
 
-      // Compute stats from boards
+      // Step 2: fetch each board fully to get real cards/lists
+      const fullBoards = await Promise.all(
+        summaries.map(b => api.boards.getById(token, b.id).catch(() => null))
+      );
+
       let totalCards = 0, inProgress = 0, done = 0, overdue = 0;
       const memberIds = new Set<string>();
       const deadlineItems: DeadlineItem[] = [];
       const now = new Date();
 
-      boardList.forEach(board => {
-        // Count members
-        board.members?.forEach(m => memberIds.add(m.user.id));
+      // Weekly buckets: index 0 = Mon … 6 = Sun
+      const weeklyBuckets = [0, 0, 0, 0, 0, 0, 0];
+      const weekAgo = new Date(now.getTime() - 7 * 86400000);
+
+      fullBoards.forEach(board => {
+        if (!board) return;
+
+        // Unique members
+        board.members?.forEach((m: any) => memberIds.add(m.user.id));
         if (board.owner) memberIds.add(board.owner.id ?? board.ownerId);
 
-        board.lists?.forEach(list => {
-          const isDoneList = list.title.toLowerCase().includes('done') ||
-            list.title.toLowerCase().includes('complete');
-          const isProgressList = list.title.toLowerCase().includes('progress') ||
-            list.title.toLowerCase().includes('doing') ||
-            list.title.toLowerCase().includes('review');
+        board.lists?.forEach((list: any) => {
+          const t = (list.title ?? '').toLowerCase();
+          const isDoneList     = t.includes('done') || t.includes('complete');
+          const isProgressList = t.includes('progress') || t.includes('doing') || t.includes('review');
 
-          list.cards?.forEach(card => {
+          list.cards?.forEach((card: any) => {
             totalCards++;
-            if (isDoneList) done++;
-            if (isProgressList) inProgress++;
+            if (card.isComplete) done++;
+            else if (isDoneList) done++;
+            if (isProgressList && !card.isComplete) inProgress++;
 
+            // Due date logic
             if (card.dueDate) {
               const due = new Date(card.dueDate);
-              if (due < now) overdue++;
-              // Collect upcoming deadlines (within next 7 days)
-              const diffDays = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+              if (due < now && !card.isComplete) overdue++;
+
+              const diffDays = (due.getTime() - now.getTime()) / 86400000;
               if (diffDays >= -1 && diffDays <= 7) {
                 deadlineItems.push({
                   id: card.id,
@@ -221,6 +232,17 @@ export default function DashboardPage() {
                 });
               }
             }
+
+            // Weekly completed tasks chart
+            if (card.isComplete && card.updatedAt) {
+              const updated = new Date(card.updatedAt);
+              if (updated >= weekAgo) {
+                // 0=Sun,1=Mon…6=Sat → remap to Mon=0…Sun=6
+                const dow = updated.getDay();
+                const idx = dow === 0 ? 6 : dow - 1;
+                weeklyBuckets[idx]++;
+              }
+            }
           });
         });
       });
@@ -228,7 +250,7 @@ export default function DashboardPage() {
       deadlineItems.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
 
       setStats({
-        totalBoards: boardList.length,
+        totalBoards: summaries.length,
         totalCards,
         inProgressCards: inProgress,
         doneCards: done,
@@ -236,20 +258,15 @@ export default function DashboardPage() {
         totalMembers: memberIds.size,
       });
       setDeadlines(deadlineItems.slice(0, 3));
+      setWeeklyData(weeklyBuckets);
 
-      // Generate simple weekly data from total cards
-      const seed = totalCards || 10;
-      setWeeklyData([
-        Math.floor(seed * 0.3), Math.floor(seed * 0.7), Math.floor(seed * 0.5),
-        Math.floor(seed * 0.9), Math.floor(seed * 0.4), Math.floor(seed * 0.2),
-        Math.floor(seed * 0.6),
-      ]);
     } catch (err) {
       console.error('Dashboard fetch failed:', err);
     } finally {
       setLoading(false);
     }
   }, [token]);
+
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -295,16 +312,26 @@ export default function DashboardPage() {
     </div>
   );
 
-  // ── Recent activity from boards
-  const recentActivity: ActivityItem[] = boards.slice(0, 3).map((board, i) => ({
+  // ── Recent activity from real board data
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const recentActivity: ActivityItem[] = boards.slice(0, 3).map((board: any, i) => ({
     id: board.id,
-    type: i === 0 ? 'board_created' : i === 1 ? 'card_completed' : 'member_joined',
-    text: i === 0 ? 'You created workspace board ' : i === 1 ? 'Tasks are active on ' : `${board.members?.length || 0} members are on `,
+    type: 'board_created' as const,
+    text: i === 0 ? 'You created board ' : `Board active with ${board.members?.length || board._count?.members || 0} members: `,
     highlight: board.title,
-    time: i === 0 ? 'Just now' : i === 1 ? '2h ago' : 'Yesterday',
+    time: board.createdAt ? formatTimeAgo(board.createdAt) : 'Recently',
     icon: i === 0 ? '📋' : i === 1 ? '✅' : '👥',
     iconBg: i === 0 ? 'var(--surface-container-low)' : i === 1 ? '#dcfce7' : '#ede9fe',
   }));
+
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--surface)', fontFamily: "'Inter', sans-serif" }}>
@@ -605,32 +632,30 @@ export default function DashboardPage() {
               }}>VIEW ALL BOARDS</Link>
             </div>
 
-            {/* Team Online */}
+            {/* Team Members */}
             <div style={{
-              background: 'var(--on-surface)',
+              background: 'var(--surface-container-lowest)',
               borderRadius: '1rem', padding: '1.5rem',
-              boxShadow: '0 4px 16px rgba(11,28,48,0.08)',
+              boxShadow: '0 4px 16px rgba(11,28,48,0.05)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>TEAM MEMBERS</p>
+                <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--secondary)' }}>TEAM MEMBERS</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#40916c' }} />
                   <span style={{ fontSize: '0.6875rem', color: '#40916c', fontWeight: 600 }}>Active</span>
                 </div>
               </div>
-              
+
               {boards.length === 0 ? (
-                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '1rem 0' }}>No team members yet</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--secondary)', textAlign: 'center', padding: '1rem 0' }}>No team members yet</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  {/* Collect unique members across boards */}
                   {Array.from(
                     new Map(
-                      boards.flatMap(b => b.members || []).map(m => [m.user.id, m])
+                      (boards as any[]).flatMap(b => b.members || []).map((m: any) => [m.user.id, m])
                     ).values()
-                  ).slice(0, 5).map((member, i) => {
+                  ).slice(0, 5).map((member: any, i) => {
                     const colors = ['#0036ad','#7c3aed','#2d6a4f','#b45309','#be123c'];
-                    const roles = ['Design', 'Development', 'Review', 'Planning', 'Testing'];
                     return (
                       <div key={member.user.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
@@ -638,18 +663,15 @@ export default function DashboardPage() {
                           background: colors[i % colors.length],
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontSize: '0.6875rem', fontWeight: 700, flexShrink: 0,
-                          border: '2px solid rgba(255,255,255,0.1)',
                         }}>
                           {(member.user.name || member.user.email)[0].toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {member.user.name || member.user.email.split('@')[0]}
                           </p>
+                          <p style={{ fontSize: '0.6875rem', color: 'var(--secondary)', marginTop: '0.1rem' }}>{member.role}</p>
                         </div>
-                        <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500, flexShrink: 0 }}>
-                          {roles[i % roles.length]}
-                        </span>
                       </div>
                     );
                   })}
@@ -658,16 +680,17 @@ export default function DashboardPage() {
 
               {/* Quick stats row */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1.25rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '0.625rem', padding: '0.625rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff' }}>{stats.totalBoards}</p>
-                  <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Boards</p>
+                <div style={{ background: 'var(--surface-container-low)', borderRadius: '0.625rem', padding: '0.625rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary)' }}>{stats.totalBoards}</p>
+                  <p style={{ fontSize: '0.625rem', color: 'var(--secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Boards</p>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '0.625rem', padding: '0.625rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff' }}>{stats.totalMembers}</p>
-                  <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Members</p>
+                <div style={{ background: 'var(--surface-container-low)', borderRadius: '0.625rem', padding: '0.625rem', textAlign: 'center' }}>
+                  <p style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary)' }}>{stats.totalMembers}</p>
+                  <p style={{ fontSize: '0.625rem', color: 'var(--secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Members</p>
                 </div>
               </div>
             </div>
+
 
             {/* Quick actions */}
             <div style={{
